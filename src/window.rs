@@ -41,6 +41,10 @@ impl Window {
             window {
                 background-color: transparent;
             }
+            .hint-label {
+                font-size: 24px;
+                font-weight: bold;
+            }
         ",
         );
         gtk4::style_context_add_provider_for_display(
@@ -102,6 +106,7 @@ impl Window {
             let hint_text = hint::get_hint(i);
             self.state.charset.borrow_mut().push((hint_text.clone(), i));
             let label = gtk4::Label::builder().label(&hint_text).build();
+            label.add_css_class("hint-label");
             background.put(&label, win.x as f64, win.y as f64);
         }
         self.win.set_child(Some(&background));
