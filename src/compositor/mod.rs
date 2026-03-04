@@ -20,13 +20,13 @@ pub struct Compositor_;
 
 impl Compositor_ {
     pub fn from(name: String) -> Result<Box<dyn Compositor>> {
-        let name = match name.as_str() {
+        let name = match name.to_lowercase().as_str() {
             "auto" => {
                 std::env::var("XDG_CURRENT_DESKTOP").context("$XDG_CURRENT_DESKTOP is not set")?
             }
             _ => name,
         };
-        let compositor = match name.as_str() {
+        let compositor = match name.to_lowercase().as_str() {
             "ura" => ura::Ura::default(),
             _ => bail!(format!("compositor not supported: {}", name)),
         };
