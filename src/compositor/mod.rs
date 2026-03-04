@@ -11,6 +11,7 @@ pub struct WindowGeometry {
 }
 
 pub trait Compositor {
+    fn update(&mut self) -> Result<()>;
     fn windows(&self) -> Result<Vec<WindowGeometry>>;
     fn activate(&self, n: usize) -> Result<()>;
 }
@@ -18,12 +19,15 @@ pub trait Compositor {
 pub struct Compositor_;
 
 impl Compositor_ {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new() -> Result<Box<dyn Compositor>> {
-        let name =
-            std::env::var("XDG_CURRENT_DESKTOP").context("$XDG_CURRENT_DESKTOP is not set")?;
+    pub fn from(name: String) -> Result<Box<dyn Compositor>> {
+        let name = match name.as_str() {
+            "auto" => {
+                std::env::var("XDG_CURRENT_DESKTOP").context("$XDG_CURRENT_DESKTOP is not set")?
+            }
+            _ => name,
+        };
         let compositor = match name.as_str() {
-            "ura" => ura::Ura::new()?,
+            "ura" => ura::Ura::default(),
             _ => bail!(format!("compositor not supported: {}", name)),
         };
         let compositor = Box::new(compositor);

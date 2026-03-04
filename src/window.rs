@@ -7,13 +7,13 @@ use gtk4_layer_shell::{Edge, Layer, LayerShell};
 use crate::{hint, state::State};
 
 pub struct Window {
-    win: ApplicationWindow,
+    win: Rc<ApplicationWindow>,
     state: Rc<State>,
 }
 
 impl Window {
     pub fn new(app: &gtk4::Application, state: Rc<State>) -> Self {
-        let win = gtk4::ApplicationWindow::new(app);
+        let win = Rc::new(gtk4::ApplicationWindow::new(app));
         Self { win, state }
     }
 
@@ -36,17 +36,23 @@ impl Window {
 
     pub fn load_css(&self) {
         let provider = gtk4::CssProvider::new();
-        provider.load_from_data(
-            "
-            window {
-                background-color: transparent;
+        let default_style = include_str!("./style.css");
+        provider.connect_parsing_error(|provider, section, error| {
+            eprintln!(
+                "Error while parsing css: {:?}:{:?} {:?}",
+                section.file().and_then(|f| f.path()),
+                section.start_location(),
+                error
+            );
+            eprintln!("Fallback to default css style...");
+            provider.load_from_data(default_style);
+        });
+        match &self.state.style {
+            Some(style) => {
+                provider.load_from_path(style);
             }
-            .hint-label {
-                font-size: 24px;
-                font-weight: bold;
-            }
-        ",
-        );
+            None => provider.load_from_data(default_style),
+        }
         gtk4::style_context_add_provider_for_display(
             &gtk4::gdk::Display::default().expect("Could not connect to a display."),
             &provider,
@@ -57,13 +63,10 @@ impl Window {
     pub fn load_keyboard_controller(&mut self) {
         let controller = EventControllerKey::new();
         let state = self.state.clone();
-        controller.connect_key_pressed(move |ctrl, key, _keycode, _state| match key {
+        let win = self.win.clone();
+        controller.connect_key_pressed(move |_, key, _keycode, _state| match key {
             Key::Escape => {
-                if let Some(widget) = ctrl.widget() {
-                    widget
-                        .activate_action("window.close", None)
-                        .unwrap_or_default();
-                }
+                win.close();
                 gtk4::glib::Propagation::Stop
             }
             _ => {
@@ -75,15 +78,20 @@ impl Window {
                             .borrow_mut()
                             .push_str(&key.to_lowercase().to_string());
 
+                        let mut matched = false;
+
                         for (hint, i) in state.charset.borrow().iter() {
                             if *hint == *state.buffer.borrow() {
-                                state.compositor.activate(*i).unwrap();
-                                if let Some(widget) = ctrl.widget() {
-                                    widget
-                                        .activate_action("window.close", None)
-                                        .unwrap_or_default();
-                                }
+                                state.compositor.borrow().activate(*i).unwrap();
+                                win.close();
+                            } else if hint.starts_with(state.buffer.borrow().as_str()) {
+                                matched = true;
                             }
+                        }
+
+                        // if not prefix matched, then quit
+                        if !matched {
+                            win.close();
                         }
 
                         gtk4::glib::Propagation::Stop
@@ -95,21 +103,35 @@ impl Window {
         self.win.add_controller(controller);
     }
 
-    pub fn show(&self) {
-        self.win.show();
+    pub fn present(&self) {
+        self.win.present();
     }
 
-    pub fn setup_components(&mut self) -> Result<()> {
-        let background = gtk4::Fixed::new();
-        let windows = self.state.compositor.windows()?;
+    pub fn update(&mut self) -> Result<()> {
+        self.state.compositor.borrow_mut().update()?;
+
+        let overlay = gtk4::Fixed::new();
+        overlay.add_css_class("hint-overlay");
+
+        let windows = self.state.compositor.borrow().windows()?;
+        if windows.is_empty() {
+            self.win.close();
+        }
         for (i, win) in windows.iter().enumerate() {
-            let hint_text = hint::get_hint(i);
+            let hint_text = hint::get_hint(i, &self.state.config.charset);
             self.state.charset.borrow_mut().push((hint_text.clone(), i));
             let label = gtk4::Label::builder().label(&hint_text).build();
             label.add_css_class("hint-label");
-            background.put(&label, win.x as f64, win.y as f64);
+
+            let container = gtk4::Box::builder()
+                .orientation(gtk4::Orientation::Horizontal)
+                .build();
+            container.add_css_class("hint-container");
+            container.append(&label);
+
+            overlay.put(&container, win.x as f64, win.y as f64);
         }
-        self.win.set_child(Some(&background));
+        self.win.set_child(Some(&overlay));
         Ok(())
     }
 }

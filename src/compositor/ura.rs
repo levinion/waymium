@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, bail};
 use std::process::Command;
 
 use crate::compositor::{Compositor, WindowGeometry};
@@ -9,13 +9,13 @@ struct UraWindow {
     id: usize,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, Default)]
 pub struct Ura {
     wins: Vec<UraWindow>,
 }
 
-impl Ura {
-    pub fn new() -> Result<Self> {
+impl Compositor for Ura {
+    fn update(&mut self) -> anyhow::Result<()> {
         let output = Command::new("sh")
             .args([
                 "-c",
@@ -24,15 +24,13 @@ impl Ura {
             .output()?;
         if output.status.success() {
             let j = String::from_utf8(output.stdout)?;
-            let wins: Vec<UraWindow> = serde_json::from_str(&j)?;
-            Ok(Ura { wins })
+            self.wins = serde_json::from_str(&j)?;
         } else {
             bail!(String::from_utf8(output.stderr)?);
         }
+        Ok(())
     }
-}
 
-impl Compositor for Ura {
     fn windows(&self) -> anyhow::Result<Vec<super::WindowGeometry>> {
         let wins = self.wins.iter().map(|w| w.geometry).collect::<Vec<_>>();
         Ok(wins)

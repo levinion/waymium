@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, path::PathBuf};
 use vipera::Configuration;
 
 use crate::{
@@ -9,7 +9,8 @@ use anyhow::Result;
 
 pub struct State {
     pub config: Config,
-    pub compositor: Box<dyn Compositor>,
+    pub style: Option<PathBuf>,
+    pub compositor: RefCell<Box<dyn Compositor>>,
     pub charset: RefCell<Vec<(String, usize)>>,
     pub buffer: RefCell<String>,
 }
@@ -17,11 +18,13 @@ pub struct State {
 impl State {
     pub fn new() -> Result<Self> {
         let config = Config::read_in_config().unwrap_or_default();
-        let compositor = Compositor_::new()?;
+        let style = Config::get_config_file().ok();
+        let compositor = RefCell::new(Compositor_::from(config.compositor.clone())?);
         let charset = RefCell::new(Vec::new());
         let buffer = RefCell::new(String::new());
         Ok(Self {
             config,
+            style,
             compositor,
             charset,
             buffer,

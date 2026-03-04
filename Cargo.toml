@@ -1,6 +1,6 @@
 [package]
 name = "waymium"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 
 [dependencies]
@@ -10,4 +10,4 @@ gtk4 = "0.10"
 gtk4-layer-shell = "0.7.1"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-vipera = "0.2.3"
+vipera = "0.2.4"

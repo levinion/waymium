@@ -1,5 +1,5 @@
-pub fn get_hint(n: usize) -> String {
-    let charset = "asdfghjklqweruiopzxcvbnm";
+pub fn get_hint(n: usize, charset: impl AsRef<str>) -> String {
+    let charset = charset.as_ref();
     let base = charset.len();
 
     if n == 0 {

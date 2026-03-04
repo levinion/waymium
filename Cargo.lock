@@ -1028,9 +1028,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vipera"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea8fcd754622202dfac78aa83078a4e04ab7b953d16079f7cc3d0adc280c34dd"
+checksum = "e65ca5c244d878a505777dccac1ebe8d6de167d971673d8fd6fbc793500b0968"
 dependencies = [
  "anyhow",
  "serde",
@@ -1048,7 +1048,7 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "waymium"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
