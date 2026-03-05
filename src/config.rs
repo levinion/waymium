@@ -5,6 +5,7 @@ use anyhow::Result;
 pub struct Config {
     pub charset: String,
     pub compositor: String,
+    pub hint_anchor: String,
 }
 
 impl Default for Config {
@@ -12,6 +13,7 @@ impl Default for Config {
         Self {
             charset: "asdfghjklqweruiopzxcvbnm".to_string(),
             compositor: "auto".to_string(),
+            hint_anchor: "top-left".to_string(),
         }
     }
 }

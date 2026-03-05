@@ -2,6 +2,7 @@ mod app;
 mod compositor;
 mod config;
 mod hint;
+mod label;
 mod state;
 mod window;
 

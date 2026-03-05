@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
 use anyhow::Result;
-use gtk4::{ApplicationWindow, EventControllerKey, gdk::Key, prelude::*};
+use gtk4::{Align, ApplicationWindow, EventControllerKey, gdk::Key, prelude::*};
 use gtk4_layer_shell::{Edge, Layer, LayerShell};
 
-use crate::{hint, state::State};
+use crate::{hint, label::Label, state::State};
 
 pub struct Window {
     win: Rc<ApplicationWindow>,
@@ -80,12 +80,19 @@ impl Window {
 
                         let mut matched = false;
 
-                        for (hint, i) in state.charset.borrow().iter() {
-                            if *hint == *state.buffer.borrow() {
+                        for (label, i) in state.labels.borrow().iter() {
+                            let hint = label.text();
+                            if hint == *state.buffer.borrow() {
                                 state.compositor.borrow().activate(*i).unwrap();
                                 win.close();
                             } else if hint.starts_with(state.buffer.borrow().as_str()) {
                                 matched = true;
+
+                                // update label
+                                label.matched.set_text(state.buffer.borrow().as_str());
+                                let unmatched =
+                                    hint.strip_prefix(state.buffer.borrow().as_str()).unwrap();
+                                label.unmatched.set_text(unmatched);
                             }
                         }
 
@@ -111,25 +118,44 @@ impl Window {
         self.state.compositor.borrow_mut().update()?;
 
         let overlay = gtk4::Fixed::new();
-        overlay.add_css_class("hint-overlay");
+        overlay.add_css_class("overlay");
 
         let windows = self.state.compositor.borrow().windows()?;
         if windows.is_empty() {
             self.win.close();
         }
         for (i, win) in windows.iter().enumerate() {
-            let hint_text = hint::get_hint(i, &self.state.config.charset);
-            self.state.charset.borrow_mut().push((hint_text.clone(), i));
-            let label = gtk4::Label::builder().label(&hint_text).build();
-            label.add_css_class("hint-label");
+            let hint_text = hint::get_hint(i, windows.len(), &self.state.config.charset)?;
+            let label = Label::new(&hint_text);
+            self.state.labels.borrow_mut().push((label.clone(), i));
 
-            let container = gtk4::Box::builder()
-                .orientation(gtk4::Orientation::Horizontal)
-                .build();
-            container.add_css_class("hint-container");
-            container.append(&label);
+            let container = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+            container.append(&label.matched);
+            container.append(&label.unmatched);
+            container.add_css_class("hint-label");
 
-            overlay.put(&container, win.x as f64, win.y as f64);
+            let anchor = match self.state.config.hint_anchor.as_str() {
+                "top-left" => (Align::Start, Align::Start),
+                "top-right" => (Align::End, Align::Start),
+                "bottom-left" => (Align::Start, Align::End),
+                "bottom-right" => (Align::End, Align::End),
+                "center" => (Align::Center, Align::Center),
+                "left" => (Align::Start, Align::Center),
+                "top" => (Align::Center, Align::Start),
+                "right" => (Align::End, Align::Center),
+                "bottom" => (Align::Center, Align::End),
+                _ => (Align::Start, Align::Start),
+            };
+
+            container.set_halign(anchor.0);
+            container.set_valign(anchor.1);
+
+            let window_container = gtk4::Overlay::new();
+            container.add_css_class("window-container");
+            window_container.set_size_request(win.width as i32, win.height as i32);
+            window_container.add_overlay(&container);
+
+            overlay.put(&window_container, win.x as f64, win.y as f64);
         }
         self.win.set_child(Some(&overlay));
         Ok(())

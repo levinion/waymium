@@ -1,19 +1,25 @@
-pub fn get_hint(n: usize, charset: impl AsRef<str>) -> String {
-    let charset = charset.as_ref();
-    let base = charset.len();
+use anyhow::{Result, bail};
 
-    if n == 0 {
-        return charset.chars().next().unwrap().to_string();
+pub fn get_hint(n: usize, total: usize, charset: impl AsRef<str>) -> Result<String> {
+    let charset: Vec<char> = charset.as_ref().chars().collect();
+    let base = charset.len();
+    if base < 2 && total > base {
+        bail!("Charset too small for multiple hints");
     }
 
-    let mut result = String::new();
-    let mut curr = n;
+    let mut depth = 1;
+    let mut capacity = base;
+    while capacity < total {
+        depth += 1;
+        capacity *= base;
+    }
 
-    while curr > 0 {
-        let rem = curr % base;
-        result.push(charset.chars().nth(rem).unwrap());
+    let mut result = Vec::new();
+    let mut curr = n;
+    for _ in 0..depth {
+        result.push(charset[curr % base]);
         curr /= base;
     }
 
-    result.chars().rev().collect()
+    Ok(result.into_iter().rev().collect())
 }
