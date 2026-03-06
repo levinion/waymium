@@ -12,7 +12,7 @@ pub struct State {
     pub config: Config,
     pub style: Option<PathBuf>,
     pub compositor: RefCell<Box<dyn Compositor>>,
-    pub labels: RefCell<Vec<(Label, usize)>>,
+    pub labels: RefCell<Vec<Label>>,
     pub buffer: RefCell<String>,
 }
 

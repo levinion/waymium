@@ -80,10 +80,10 @@ impl Window {
 
                         let mut matched = false;
 
-                        for (label, i) in state.labels.borrow().iter() {
+                        for (i, label) in state.labels.borrow().iter().enumerate() {
                             let hint = label.text();
                             if hint == *state.buffer.borrow() {
-                                state.compositor.borrow().activate(*i).unwrap();
+                                state.compositor.borrow().activate(i).unwrap();
                                 win.close();
                             } else if hint.starts_with(state.buffer.borrow().as_str()) {
                                 matched = true;
@@ -127,7 +127,7 @@ impl Window {
         for (i, win) in windows.iter().enumerate() {
             let hint_text = hint::get_hint(i, windows.len(), &self.state.config.charset)?;
             let label = Label::new(&hint_text);
-            self.state.labels.borrow_mut().push((label.clone(), i));
+            self.state.labels.borrow_mut().push(label.clone());
 
             let anchor = match self.state.config.hint_anchor.as_str() {
                 "top-left" => (Align::Start, Align::Start),
