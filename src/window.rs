@@ -129,11 +129,6 @@ impl Window {
             let label = Label::new(&hint_text);
             self.state.labels.borrow_mut().push((label.clone(), i));
 
-            let container = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
-            container.append(&label.matched);
-            container.append(&label.unmatched);
-            container.add_css_class("hint-label");
-
             let anchor = match self.state.config.hint_anchor.as_str() {
                 "top-left" => (Align::Start, Align::Start),
                 "top-right" => (Align::End, Align::Start),
@@ -146,12 +141,10 @@ impl Window {
                 "bottom" => (Align::Center, Align::End),
                 _ => (Align::Start, Align::Start),
             };
-
-            container.set_halign(anchor.0);
-            container.set_valign(anchor.1);
+            let container = label.container(anchor.0, anchor.1);
 
             let window_container = gtk4::Overlay::new();
-            container.add_css_class("window-container");
+            window_container.add_css_class("window-container");
             window_container.set_size_request(win.width as i32, win.height as i32);
             window_container.add_overlay(&container);
 
