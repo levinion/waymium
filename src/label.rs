@@ -30,4 +30,12 @@ impl Label {
         container.set_valign(valign);
         container
     }
+
+    pub fn update(&self, prefix: impl AsRef<str>) {
+        let matched = prefix.as_ref();
+        let hint = self.text();
+        let unmatched = hint.strip_prefix(matched).unwrap();
+        self.matched.set_text(matched);
+        self.unmatched.set_text(unmatched);
+    }
 }

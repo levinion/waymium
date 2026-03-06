@@ -44,7 +44,7 @@ impl Window {
                 section.start_location(),
                 error
             );
-            eprintln!("Fallback to default css style...");
+            eprintln!("Fall back to default css style...");
             provider.load_from_data(default_style);
         });
         match &self.state.style {
@@ -87,12 +87,7 @@ impl Window {
                                 win.close();
                             } else if hint.starts_with(state.buffer.borrow().as_str()) {
                                 matched = true;
-
-                                // update label
-                                label.matched.set_text(state.buffer.borrow().as_str());
-                                let unmatched =
-                                    hint.strip_prefix(state.buffer.borrow().as_str()).unwrap();
-                                label.unmatched.set_text(unmatched);
+                                label.update(state.buffer.borrow().as_str());
                             }
                         }
 
